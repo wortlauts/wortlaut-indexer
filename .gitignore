@@ -13,3 +13,6 @@ obj/
 Thumbs.db
 .idea/
 .vscode/
+
+# Downloaded protocols (large, reproducible with the download command)
+data/

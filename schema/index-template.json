@@ -1,0 +1,66 @@
+{
+  "index_patterns": ["speeches-*"],
+  "priority": 100,
+  "_meta": {
+    "description": "Wortlaut speeches: one document per Bundestag speech",
+    "template_version": 1
+  },
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "id": { "type": "keyword" },
+        "legislative_period": { "type": "short" },
+        "session": { "type": "short" },
+        "date": { "type": "date", "format": "yyyy-MM-dd" },
+        "agenda_item": { "type": "text", "analyzer": "german" },
+        "delivery": { "type": "keyword" },
+        "speaker": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": {
+              "type": "text",
+              "fields": { "keyword": { "type": "keyword" } }
+            },
+            "faction": { "type": "keyword" },
+            "role": { "type": "keyword" }
+          }
+        },
+        "text": {
+          "type": "text",
+          "analyzer": "german",
+          "index_options": "offsets",
+          "fields": {
+            "exact": {
+              "type": "text",
+              "analyzer": "standard",
+              "index_options": "offsets"
+            }
+          }
+        },
+        "reactions": {
+          "type": "nested",
+          "properties": {
+            "type": { "type": "keyword" },
+            "source": { "type": "keyword" },
+            "text": { "type": "text", "analyzer": "german" }
+          }
+        },
+        "word_count": { "type": "integer" },
+        "source_url": { "type": "keyword", "index": false, "doc_values": false },
+        "rights": {
+          "properties": {
+            "license": { "type": "keyword" },
+            "attribution": { "type": "keyword" },
+            "allowed_actions": { "type": "keyword" }
+          }
+        },
+        "content_hash": { "type": "keyword" }
+      }
+    }
+  }
+}

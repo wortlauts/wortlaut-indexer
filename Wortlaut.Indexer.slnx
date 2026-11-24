@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wortlaut.Indexer/Wortlaut.Indexer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Wortlaut.Indexer.Tests/Wortlaut.Indexer.Tests.csproj" />
+  </Folder>
+</Solution>
