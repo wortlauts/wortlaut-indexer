@@ -39,7 +39,7 @@ dbtplenarprotokoll  (attributes: wahlperiode, sitzung-nr, sitzung-datum dd.mm.yy
   - stage directions that are not reactions: `(Abg. X [AfD] meldet sich zu einer Zwischenfrage)`, `(Die Abgeordneten ... erheben sich)`
 
   A comment therefore has to be split on ` – ` and each part classified. The share of named interjections is large (about a third of all comments in the samples), so heckle search is worth the effort.
-- **Speaker data.** `redner/@id` is the speaker id; `name` has `titel`, `vorname`, `nachname`, `namenszusatz`, `ortszusatz` (for example `Carsten Schneider [Erfurt]`), `fraktion` and `rolle` (`rolle_lang`, `rolle_kurz`). The XML knows the parliamentary group (`fraktion`), not the party. Government members and guests have a `rolle` and usually no `fraktion`. The spelling varies (`Die Linke`, `DIE LINKE`, `Fraktionslos`, `fraktionslos`, a non-breaking space in `BÜNDNIS 90/DIE GRÜNEN`), so values need normalising before they go into filters and facets. The data model field `party` therefore needs a decision: see below.
+- **Speaker data.** `redner/@id` is the speaker id; `name` has `titel`, `vorname`, `nachname`, `namenszusatz`, `ortszusatz` (for example `Carsten Schneider [Erfurt]`), `fraktion` and `rolle` (`rolle_lang`, `rolle_kurz`). The XML knows the parliamentary group (`fraktion`), not the party. Government members and guests have a `rolle` and usually no `fraktion`. The spelling varies (`Die Linke`, `DIE LINKE`, `Fraktionslos`, `fraktionslos`, a non-breaking space in `BÜNDNIS 90/DIE GRÜNEN`), so values are normalised before they go into filters and facets.
 - **Agenda item.** The title of the surrounding `tagesordnungspunkt` is the `agenda_item`.
 - **Ids.** `rede/@id` looks like `ID2110800600` (period 21, session 108, running number 00600) and is unique within a protocol. A stable global id can be built as `<period>-<session>-<number>`.
 - **Revisions.** The root has `status` (`erfasst`, `korrektur`, `freigegeben`) and `version`. Whether speech numbers stay stable between revisions is not verified.
@@ -47,6 +47,7 @@ dbtplenarprotokoll  (attributes: wahlperiode, sitzung-nr, sitzung-datum dd.mm.yy
 
 ## Open points
 
-- Map `fraktion` to `party` or add a separate `faction` field? Probably both, with `party` only filled when it is known (for example from the member master data, `MdB-Stammdaten.zip` on the Open Data page).
+- The index has a `speaker.faction` field, not a party (see ADR 0004). A `party` field needs the member master data (`MdB-Stammdaten.zip` on the Open Data page).
+- Questions of other members and the words of the presiding officer are not indexed yet.
 - Verify that revisions keep speech ids stable before relying on id plus content hash for idempotency.
 - Check periods before 19: they are known to differ in format and are out of scope for phase 1.
