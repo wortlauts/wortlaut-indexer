@@ -7,19 +7,19 @@ using Wortlaut.Indexer.Parsing;
 namespace Wortlaut.Indexer.Tests.Indexing;
 
 [Trait("Category", "Integration")]
-public class ElasticsearchSpeechStoreTests : IClassFixture<ElasticsearchFixture>, IDisposable
+public class EsSpeechStoreTests : IClassFixture<EsFixture>, IDisposable
 {
     private readonly CancellationToken cancellationToken = TestContext.Current.CancellationToken;
     private readonly HttpClient http;
     private readonly IndexNames names;
-    private readonly ElasticsearchSpeechStore store;
+    private readonly EsSpeechStore store;
 
-    public ElasticsearchSpeechStoreTests(ElasticsearchFixture elasticsearch)
+    public EsSpeechStoreTests(EsFixture elasticsearch)
     {
         var suffix = Guid.NewGuid().ToString("N")[..8];
         names = new IndexNames($"speeches-test-{suffix}", $"speeches-alias-{suffix}");
         http = elasticsearch.CreateClient();
-        store = new ElasticsearchSpeechStore(http, names);
+        store = new EsSpeechStore(http, names);
     }
 
     public void Dispose() => http.Dispose();
@@ -112,7 +112,7 @@ public class ElasticsearchSpeechStoreTests : IClassFixture<ElasticsearchFixture>
         await store.PrepareAsync(cancellationToken);
         var outOfRange = TestSpeeches.Create(legislativePeriod: 40_000);
 
-        var exception = await Assert.ThrowsAsync<ElasticsearchException>(() => store.IndexAsync([outOfRange], cancellationToken));
+        var exception = await Assert.ThrowsAsync<EsException>(() => store.IndexAsync([outOfRange], cancellationToken));
 
         Assert.Contains("1 speeches were rejected", exception.Message);
     }

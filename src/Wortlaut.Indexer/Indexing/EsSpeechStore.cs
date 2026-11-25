@@ -5,7 +5,7 @@ using Wortlaut.Indexer.Model;
 
 namespace Wortlaut.Indexer.Indexing;
 
-public sealed class ElasticsearchSpeechStore(HttpClient http, IndexNames names) : ISpeechStore
+public sealed class EsSpeechStore(HttpClient http, IndexNames names) : ISpeechStore
 {
     private const string TemplateName = "wortlaut-speeches";
     private const string JsonContentType = "application/json";
@@ -92,7 +92,7 @@ public sealed class ElasticsearchSpeechStore(HttpClient http, IndexNames names) 
             .Select(result => $"{result.GetProperty("_id").GetString()}: {result.GetProperty("error").GetRawText()}")
             .ToList();
 
-        throw new ElasticsearchException(
+        throw new EsException(
             $"{failures.Count} speeches were rejected. First failures: {string.Join("; ", failures.Take(MaxReportedBulkFailures))}");
     }
 
@@ -121,6 +121,6 @@ public sealed class ElasticsearchSpeechStore(HttpClient http, IndexNames names) 
 
         return response.IsSuccessStatusCode
             ? content
-            : throw new ElasticsearchException($"{method} {path} failed with {(int)response.StatusCode}: {content}");
+            : throw new EsException($"{method} {path} failed with {(int)response.StatusCode}: {content}");
     }
 }

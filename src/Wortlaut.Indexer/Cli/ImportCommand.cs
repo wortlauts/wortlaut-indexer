@@ -43,7 +43,7 @@ internal static class ImportCommand
         {
             using var http = new HttpClient { BaseAddress = parseResult.GetRequiredValue(elasticsearch), Timeout = RequestTimeout };
             var names = new IndexNames(parseResult.GetRequiredValue(index), parseResult.GetRequiredValue(alias));
-            var importer = new ProtocolImporter(new ElasticsearchSpeechStore(http, names));
+            var importer = new ProtocolImporter(new EsSpeechStore(http, names));
             var files = parseResult.GetRequiredValue(source).EnumerateFiles("*.xml").Select(file => file.FullName).Order();
 
             var protocols = 0;

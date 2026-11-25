@@ -4,7 +4,7 @@ using Testcontainers.Elasticsearch;
 
 namespace Wortlaut.Indexer.Tests.Indexing;
 
-public sealed class ElasticsearchFixture : IAsyncLifetime
+public sealed class EsFixture : IAsyncLifetime
 {
     private const string Image = "docker.elastic.co/elasticsearch/elasticsearch:9.5.7";
 

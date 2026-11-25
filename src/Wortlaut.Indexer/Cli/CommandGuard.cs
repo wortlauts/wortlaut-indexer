@@ -15,7 +15,7 @@ internal static class CommandGuard
             await command();
             return Success;
         }
-        catch (Exception exception) when (exception is ProtocolFormatException or ElasticsearchException or HttpRequestException or IOException)
+        catch (Exception exception) when (exception is ProtocolFormatException or EsException or HttpRequestException or IOException)
         {
             await Console.Error.WriteLineAsync(exception.Message);
             return Failure;
