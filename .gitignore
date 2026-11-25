@@ -16,3 +16,4 @@ Thumbs.db
 
 # Downloaded protocols (large, reproducible with the download command)
 data/
+.vs/
