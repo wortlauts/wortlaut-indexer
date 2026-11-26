@@ -1,0 +1,104 @@
+name: Deploy to PROD
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    needs: ci
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: type=sha
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+
+  pin-version:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      revision: ${{ steps.pin.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository_owner }}/wortlaut-infra
+          ssh-key: ${{ secrets.INFRA_DEPLOY_KEY }}
+
+      - name: Pin the new image tag
+        id: pin
+        env:
+          TAG: ${{ needs.image.outputs.tag }}
+        run: |
+          set -euo pipefail
+          sed -i "s|^INDEXER_TAG=.*|INDEXER_TAG=${TAG}|" compose/prod/versions.env
+          if git diff --quiet; then
+            echo "This version is already pinned."
+            echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --all --message "Deploy indexer ${TAG} to PROD"
+          for _ in 1 2 3; do
+            if git push; then
+              echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git pull --rebase
+          done
+          exit 1
+
+  confirm-deploy:
+    needs: pin-version
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Wait for the host to report the deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVISION: ${{ needs.pin-version.outputs.revision }}
+        run: |
+          set -euo pipefail
+          infra="${GITHUB_REPOSITORY_OWNER}/wortlaut-infra"
+          for _ in $(seq 1 100); do
+            status="$(gh api "repos/${infra}/contents/status.env?ref=prod-status" --header "Accept: application/vnd.github.raw" 2>/dev/null || true)"
+            deployed="$(sed -n 's/^revision=//p' <<< "$status" | head -n 1)"
+            if [[ -n "$deployed" ]]; then
+              relation="$(gh api "repos/${infra}/compare/${REVISION}...${deployed}" --jq .status 2>/dev/null || true)"
+              if [[ "$relation" == identical || "$relation" == ahead ]]; then
+                echo "$status"
+                grep -q '^result=success$' <<< "$status"
+                exit $?
+              fi
+            fi
+            sleep 10
+          done
+          echo "::error::The host did not report a result for ${REVISION:0:7} in time."
+          exit 1
