@@ -44,6 +44,7 @@ dbtplenarprotokoll  (attributes: wahlperiode, sitzung-nr, sitzung-datum dd.mm.yy
 - **Ids.** `rede/@id` looks like `ID2110800600` (period 21, session 108, running number 00600) and is unique within a protocol. A stable global id can be built as `<period>-<session>-<number>`.
 - **Revisions.** The root has `status` (`erfasst`, `korrektur`, `freigegeben`) and `version`. Whether speech numbers stay stable between revisions is not verified.
 - **The DTD is not strictly followed.** The sample of period 19 fails validation because the fixed `vertrieb` attribute differs. The parser must be tolerant and must not rely on DTD validation.
+- **Faction values that are not factions.** Periods 19 to 21 contain 7 speeches (of about 54,000) with odd values: a Bundesrat member is listed with the faction `Bremen` (id 10000), and one record merges two persons into `Dirk-UlrichAlexander Mende Föhr` with the faction `SPDCDU/CSU` (id 11005304, 6 speeches). They are indexed as they are; the faction facet shows them as separate entries.
 
 ## Open points
 
