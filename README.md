@@ -39,7 +39,9 @@ GET speeches/_search
 | Command | Purpose |
 | --- | --- |
 | `download --legislative-period <n> [--target <dir>]` | Download the protocols of period 19, 20 or 21 into `data/protocols`. Files that are already present are skipped. |
-| `import [--legislative-period <n>] [--source <dir>] [--elasticsearch <url>] [--index <name>] [--alias <name>]` | Parse the protocols in the source directory and write their speeches to Elasticsearch. |
+| `import [--legislative-period <n>] [--source <dir>] [--elasticsearch <url>] [--elasticsearch-username <user>] [--index <name>] [--alias <name>]` | Parse the protocols in the source directory and write their speeches to Elasticsearch. |
+
+When Elasticsearch has security enabled, pass `--elasticsearch-username` (or set `ELASTICSEARCH_USERNAME`) and put the password into the `ELASTICSEARCH_PASSWORD` environment variable. The password is never taken from the command line, so it does not show up in the process list.
 
 Imports are idempotent: every speech has a stable id and a content hash, and only new or changed speeches are written. A run over unchanged protocols writes nothing.
 
@@ -62,6 +64,16 @@ One document is the text of one speaker within one `rede` of a protocol, with th
 | `content_hash` | SHA-256 of the document, used for idempotent imports |
 
 Notes on the source format are in [docs/source-format.md](docs/source-format.md).
+
+## Container
+
+The `Dockerfile` builds a small image that runs the same commands. Mount a volume at `/data` for the downloaded protocols:
+
+```powershell
+docker build -t wortlaut-indexer .
+docker run --rm -v protocols:/data wortlaut-indexer download --legislative-period 21 --target /data
+docker run --rm -v protocols:/data -e ELASTICSEARCH_PASSWORD wortlaut-indexer import --source /data --elasticsearch http://host.docker.internal:9200
+```
 
 ## Development
 
