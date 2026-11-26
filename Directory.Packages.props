@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="System.CommandLine" Version="2.0.15" />
+    <PackageVersion Include="System.CommandLine" Version="3.0.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
     <PackageVersion Include="Testcontainers.Elasticsearch" Version="4.17.0" />
   </ItemGroup>
