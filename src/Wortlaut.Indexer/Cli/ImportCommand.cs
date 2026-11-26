@@ -5,6 +5,9 @@ namespace Wortlaut.Indexer.Cli;
 
 internal static class ImportCommand
 {
+    private const string UsernameVariable = "ELASTICSEARCH_USERNAME";
+    private const string PasswordVariable = "ELASTICSEARCH_PASSWORD";
+    private const string DefaultElasticsearchUrl = "http://localhost:9200";
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(2);
 
     public static Command Create()
@@ -18,10 +21,23 @@ internal static class ImportCommand
         {
             Description = "Only import protocols of this legislative period",
         };
-        var elasticsearch = new Option<Uri>("--elasticsearch")
+        var elasticsearch = new Option<string>("--elasticsearch")
         {
             Description = "Elasticsearch base URL",
-            DefaultValueFactory = _ => new Uri("http://localhost:9200"),
+            DefaultValueFactory = _ => DefaultElasticsearchUrl,
+        };
+        elasticsearch.Validators.Add(result =>
+        {
+            var value = result.GetValueOrDefault<string>();
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))
+            {
+                result.AddError($"'{value}' is not a valid http or https URL.");
+            }
+        });
+        var username = new Option<string?>("--elasticsearch-username")
+        {
+            Description = $"User to log in with. The password is read from the {PasswordVariable} environment variable",
+            DefaultValueFactory = _ => Environment.GetEnvironmentVariable(UsernameVariable),
         };
         var index = new Option<string>("--index")
         {
@@ -36,12 +52,13 @@ internal static class ImportCommand
 
         var command = new Command("import", "Parse protocols and write their speeches to Elasticsearch")
         {
-            source, legislativePeriod, elasticsearch, index, alias,
+            source, legislativePeriod, elasticsearch, username, index, alias,
         };
 
         command.SetAction((parseResult, cancellationToken) => CommandGuard.RunAsync(async () =>
         {
-            using var http = new HttpClient { BaseAddress = parseResult.GetRequiredValue(elasticsearch), Timeout = RequestTimeout };
+            var credentials = EsCredentials.From(parseResult.GetValue(username), Environment.GetEnvironmentVariable(PasswordVariable));
+            using var http = EsHttpClient.Create(new Uri(parseResult.GetRequiredValue(elasticsearch)), credentials, RequestTimeout);
             var names = new IndexNames(parseResult.GetRequiredValue(index), parseResult.GetRequiredValue(alias));
             var importer = new ProtocolImporter(new EsSpeechStore(http, names));
             var files = parseResult.GetRequiredValue(source).EnumerateFiles("*.xml").Select(file => file.FullName).Order();
